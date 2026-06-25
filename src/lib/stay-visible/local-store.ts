@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import type { Approval, Client, Post, PostOpportunity, StoredData, VoiceProfile } from './types';
+import type { Approval, Client, Post, PostOpportunity, StoredData, VoiceProfile, WeeklyIdea } from './types';
 import { emptyVoiceProfile } from './demo-data';
 
 const dataDir = path.join(process.cwd(), 'data');
@@ -154,6 +154,23 @@ export async function respondToApproval(token: string, caption: string, action: 
   }
   await writeStore(data);
   return { approval, post };
+}
+
+export async function saveWeeklyIdeas(clientId: string, ideas: Array<Omit<WeeklyIdea, 'id' | 'clientId' | 'clientName'>>, sourceContext: Record<string, unknown> = {}) {
+  if (hasDatabase()) return saveDatabaseWeeklyIdeas(clientId, ideas, sourceContext);
+  const data = await readStore();
+  const client = data.clients.find((item) => item.id === clientId);
+  if (!client) return [];
+  const saved = ideas.map((idea) => ({
+    ...idea,
+    id: randomUUID(),
+    clientId,
+    clientName: `${client.firstName} ${client.lastName}`,
+    status: idea.status ?? 'Idea' as const,
+  }));
+  data.weeklyIdeas.unshift(...saved);
+  await writeStore(data);
+  return saved;
 }
 
 function extractHashtags(content: string) {
@@ -412,6 +429,30 @@ async function respondToDatabaseApproval(token: string, caption: string, action:
     await db.update(schema.voiceProfiles).set({ learningNotes: [...profile.learningNotes, `Client feedback: ${feedback}`] }).where(eq(schema.voiceProfiles.clientId, approval.clientId));
   }
   return { approval, post: { id: approval.postId } };
+}
+
+async function saveDatabaseWeeklyIdeas(clientId: string, ideas: Array<Omit<WeeklyIdea, 'id' | 'clientId' | 'clientName'>>, sourceContext: Record<string, unknown>) {
+  const { db, schema } = await getDbContext();
+  const weekOf = startOfWeekIso();
+  const rows = await db.insert(schema.weeklyIdeas).values(ideas.map((idea) => ({
+    clientId,
+    weekOf,
+    suggestedTopic: idea.topic,
+    whyItWorks: idea.reason,
+    suggestedAngle: idea.angle,
+    sourceContext,
+    status: 'Idea' as const,
+  }))).returning();
+  const store = await readDatabaseStore();
+  return rows.map((row) => store.weeklyIdeas.find((idea) => idea.id === row.id)!).filter(Boolean);
+}
+
+function startOfWeekIso(date = new Date()) {
+  const copy = new Date(date);
+  const day = copy.getDay();
+  const diff = copy.getDate() - day + (day === 0 ? -6 : 1);
+  copy.setDate(diff);
+  return copy.toISOString().slice(0, 10);
 }
 
 async function ensureLocalAdmin() {

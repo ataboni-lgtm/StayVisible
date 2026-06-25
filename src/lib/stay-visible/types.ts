@@ -77,6 +77,7 @@ export interface WeeklyIdea {
   topic: string;
   reason: string;
   angle: string;
+  status?: PostStatus;
 }
 
 export interface VoiceProfile {
