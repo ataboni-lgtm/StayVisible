@@ -455,6 +455,7 @@ async function saveDatabaseVoiceProfile(clientId: string, profile: Partial<Voice
   const values = {
     clientId,
     ...normalizeVoiceProfile(profile),
+    sourceAnswers: _onboarding,
   };
   const [row] = await db.insert(schema.voiceProfiles).values(values).onConflictDoUpdate({ target: schema.voiceProfiles.clientId, set: values }).returning();
   await db.update(schema.clients).set({ status: 'Active' }).where(eq(schema.clients.id, clientId));
