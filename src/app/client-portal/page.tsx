@@ -1,0 +1,62 @@
+import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { CalendarDays, FilePenLine, Sparkles } from 'lucide-react';
+import { ClientPortalEventForm } from '@/components/stay-visible/client-portal-event-form';
+import { EmptyState, StatusBadge } from '@/components/stay-visible/ui';
+import { readStore } from '@/lib/stay-visible/local-store';
+
+export const dynamic = 'force-dynamic';
+
+export default async function ClientPortalPage() {
+  const cookieStore = await cookies();
+  const clientId = cookieStore.get('stayvisible-client-id')?.value;
+  if (!clientId) redirect('/client-login');
+
+  const data = await readStore();
+  const client = data.clients.find((item) => item.id === clientId && item.status !== 'Paused');
+  if (!client) redirect('/client-login');
+
+  const opportunities = data.postOpportunities.filter((item) => item.clientId === client.id);
+
+  return <main className="min-h-screen bg-[#F8FAFC]">
+    <header className="border-b border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <Link href="/client-portal" className="flex items-center gap-2.5">
+          <span className="grid size-9 place-items-center rounded-xl bg-[#2563EB] text-white shadow-sm"><Sparkles className="size-4.5" /></span>
+          <span className="text-lg font-semibold tracking-tight text-[#0B1F3A]">StayVisible</span>
+        </Link>
+        <span className="rounded-full bg-[#F4D7A1] px-3 py-1 text-xs font-semibold text-[#0B1F3A]">{client.firstName} {client.lastName}</span>
+      </div>
+    </header>
+    <div className="@container/page mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-7">
+        <p className="eyebrow">Client portal</p>
+        <h1 className="page-title">What should we know about?</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Add upcoming events now. Photos and final takeaways can come later.</p>
+      </div>
+      <ClientPortalEventForm />
+      <section className="mt-7 surface-card overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+          <CalendarDays className="size-5 text-blue-600" />
+          <div>
+            <h2 className="font-semibold text-[#0B1F3A]">Your submitted items</h2>
+            <p className="mt-1 text-sm text-slate-400">These are visible to the Stay Visible admin workspace.</p>
+          </div>
+        </div>
+        {opportunities.length ? <div className="divide-y divide-slate-100">
+          {opportunities.map((opportunity) => <article key={opportunity.id} className="flex flex-col gap-3 px-5 py-4 @lg/page:flex-row @lg/page:items-center @lg/page:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-[#0B1F3A]">{opportunity.topic}</h3>
+                <StatusBadge status={opportunity.status} />
+              </div>
+              <p className="mt-1 text-sm text-slate-500">{opportunity.date || 'Date TBD'}{opportunity.location ? ` · ${opportunity.location}` : ''}</p>
+            </div>
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><FilePenLine className="size-4" />Admin will draft from this</span>
+          </article>)}
+        </div> : <div className="p-5"><EmptyState title="No events submitted yet" description="Add the first event above and it will appear here." /></div>}
+      </section>
+    </div>
+  </main>;
+}
