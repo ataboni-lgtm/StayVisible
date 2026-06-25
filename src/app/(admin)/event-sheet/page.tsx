@@ -8,7 +8,7 @@ export default async function EventSheetPage() {
   const { clients, postOpportunities } = await readStore();
   const planned = postOpportunities.filter((item) => item.status === 'Idea').sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   return <div className="@container/page">
-    <PageHeader eyebrow="Planning sheet" title="Events coming up" description="Add future events now, attach photo context later, and draft text when the moment is closer." />
+    <PageHeader eyebrow="Planning sheet" title="Events coming up" description="Add future events now. On the event day, Stay Visible can remind clients to take photos and later upload them for draft generation." />
     <EventSheet clients={clients} opportunities={planned} />
   </div>;
 }

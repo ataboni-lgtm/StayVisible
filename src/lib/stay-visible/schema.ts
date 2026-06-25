@@ -199,7 +199,9 @@ export const notifications = pgTable(
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
     postId: uuid('post_id').references(() => posts.id, { onDelete: 'cascade' }),
+    postOpportunityId: uuid('post_opportunity_id').references(() => postOpportunities.id, { onDelete: 'cascade' }),
     approvalId: uuid('approval_id').references(() => approvals.id, { onDelete: 'set null' }),
+    notificationType: text('notification_type').notNull().default('general'),
     channel: text('channel').notNull(),
     recipient: text('recipient').notNull(),
     providerMessageId: text('provider_message_id'),
@@ -211,6 +213,7 @@ export const notifications = pgTable(
   (table) => ({
     clientIdx: index('notifications_client_id_idx').on(table.clientId),
     postIdx: index('notifications_post_id_idx').on(table.postId),
+    opportunityIdx: index('notifications_opportunity_id_idx').on(table.postOpportunityId),
   }),
 );
 

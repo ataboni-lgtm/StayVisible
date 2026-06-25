@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { CalendarDays, FilePenLine, Sparkles } from 'lucide-react';
 import { ClientPortalEventForm } from '@/components/stay-visible/client-portal-event-form';
+import { ClientPortalPhotoUpload } from '@/components/stay-visible/client-portal-photo-upload';
 import { EmptyState, StatusBadge } from '@/components/stay-visible/ui';
 import { readStore } from '@/lib/stay-visible/local-store';
 
@@ -61,15 +62,16 @@ export default async function ClientPortalPage() {
           </div>
         </div>
         {opportunities.length ? <div className="divide-y divide-slate-100">
-          {opportunities.map((opportunity) => <article key={opportunity.id} className="flex flex-col gap-3 px-5 py-4 @lg/page:flex-row @lg/page:items-center @lg/page:justify-between">
+          {opportunities.map((opportunity) => <article key={opportunity.id} className="grid gap-4 px-5 py-4 @lg/page:grid-cols-[1fr_auto] @lg/page:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-semibold text-[#0B1F3A]">{opportunity.topic}</h3>
                 <StatusBadge status={opportunity.status} />
               </div>
               <p className="mt-1 text-sm text-slate-500">{opportunity.date || 'Date TBD'}{opportunity.location ? ` · ${opportunity.location}` : ''}</p>
+              {opportunity.photoContext && <p className="mt-2 max-w-2xl whitespace-pre-line text-xs leading-5 text-slate-400">{opportunity.photoContext}</p>}
             </div>
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><FilePenLine className="size-4" />Admin will draft from this</span>
+            <div className="space-y-2"><ClientPortalPhotoUpload opportunityId={opportunity.id} /><span className="inline-flex items-center gap-2 text-xs font-semibold text-blue-600"><FilePenLine className="size-4" />Admin will draft from this</span></div>
           </article>)}
         </div> : <div className="p-5"><EmptyState title="No events submitted yet" description="Add the first event above and it will appear here." /></div>}
       </section>

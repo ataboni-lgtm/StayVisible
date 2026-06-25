@@ -29,6 +29,13 @@
       "when": 1782415200000,
       "tag": "0005_client_portal_access",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782417600000,
+      "tag": "0006_event_reminder_notifications",
+      "breakpoints": true
     }
   ]
 }

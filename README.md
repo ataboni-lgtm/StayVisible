@@ -59,7 +59,16 @@ Without these values the route stays in placeholder mode and does not send an em
 2. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER`.
 3. Set a client’s notification preference to Text or Both.
 
-SendGrid and Twilio sends are written to `notifications` when Supabase is configured.
+SendGrid and Twilio sends are written to `notifications`. Event reminders use the same providers.
+
+## Event photo reminders
+
+Scheduled Event Sheet items can trigger two reminder jobs:
+
+- Morning photo reminder: `POST /api/notifications/event-reminders` with `{"reminderType":"event_photo_reminder"}`
+- Evening upload prompt: `POST /api/notifications/event-reminders` with `{"reminderType":"photo_upload_prompt"}`
+
+Both default to today’s events. You can pass `date` as `YYYY-MM-DD` for testing. The first reminder emails the client to take photos at the event. The second follows the client’s preferred notification method and links them to the client portal to upload photos or notes. Reminder sends are logged per event/type/channel so repeated job runs do not duplicate messages.
 
 ## Environment variables
 
@@ -86,5 +95,7 @@ With Supabase configured, use a new 32-byte random token created by the database
 - `/clients/[id]/onboarding`, `/clients/[id]/voice-profile`
 - `/posts/new`, `/posts/[id]`, `/posts/[id]/review`
 - `/approve/[token]`
+- `/client-login`, `/client-portal`
+- `/event-sheet`
 - `/weekly-ideas`
 - `/settings`
