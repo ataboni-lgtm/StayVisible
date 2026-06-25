@@ -5,6 +5,7 @@ import { ZodValidationError } from '@/lib/route-handler/next-errors';
 import { readStore, upsertClient } from '@/lib/stay-visible/local-store';
 
 const zClientInput = z.object({
+  id: z.string().uuid().optional(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),
@@ -31,6 +32,7 @@ export const POST = routeHandler(async (request: NextRequest) => {
   if (!parsed.success) return ZodValidationError(parsed.error);
   const client = await upsertClient({
     ...parsed.data,
+    id: parsed.data.id,
     phone: parsed.data.phone ?? '',
     company: parsed.data.company ?? '',
     jobTitle: parsed.data.jobTitle ?? '',

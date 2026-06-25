@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BriefcaseBusiness, Building2, ExternalLink, FilePenLine, Mail, MapPin, Phone, Plus, Sparkles } from 'lucide-react';
+import { BriefcaseBusiness, Building2, ExternalLink, FilePenLine, Mail, MapPin, Pencil, Phone, Plus, Sparkles } from 'lucide-react';
 import { readStore } from '@/lib/stay-visible/local-store';
 import { EmptyState, PageHeader, StatusBadge, primaryButtonClass, secondaryButtonClass } from '@/components/stay-visible/ui';
 
@@ -13,6 +13,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const roleLine = [client.jobTitle, client.company].filter(Boolean).join(' at ');
   return <div className="@container/page">
     <PageHeader eyebrow="Client profile" title={`${client.firstName} ${client.lastName}`} description={roleLine || 'Client details, LinkedIn voice, and content workflow.'} action={<div className="flex flex-wrap gap-2">
+      <Link href={`/clients/${client.id}/edit`} className={secondaryButtonClass}><Pencil className="size-4" />Edit profile</Link>
       <Link href={`/clients/${client.id}/onboarding`} className={primaryButtonClass}><Sparkles className="size-4" />Onboarding</Link>
       <Link href={`/posts/new`} className={secondaryButtonClass}><FilePenLine className="size-4" />Draft post</Link>
     </div>} />
