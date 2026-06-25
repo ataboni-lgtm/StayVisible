@@ -187,6 +187,7 @@ export async function respondToApproval(token: string, caption: string, action: 
   if (!approval) return null;
   const post = data.posts.find((item) => item.id === approval.postId);
   if (!post) return null;
+  const originalCaption = post.caption;
   const now = new Date().toISOString();
   approval.status = 'closed';
   approval.action = action;
@@ -195,12 +196,10 @@ export async function respondToApproval(token: string, caption: string, action: 
   post.caption = caption;
   post.status = action.startsWith('approve') ? 'Approved' : action === 'reject' ? 'Rejected' : 'Changes Requested';
   post.updatedAt = 'Just now';
-  if (feedback) {
+  const learningNotes = extractLearningNotes(originalCaption, caption, feedback, action);
+  if (learningNotes.length) {
     const profile = data.voiceProfiles[approval.clientId] ?? emptyVoiceProfile;
-    data.voiceProfiles[approval.clientId] = {
-      ...profile,
-      learningNotes: [...profile.learningNotes, `Client feedback: ${feedback}`],
-    };
+    data.voiceProfiles[approval.clientId] = { ...profile, learningNotes: mergeLearningNotes(profile.learningNotes, learningNotes) };
   }
   await writeStore(data);
   return { approval, post };
@@ -559,15 +558,52 @@ async function respondToDatabaseApproval(token: string, caption: string, action:
   const { db, schema, eq } = await getDbContext();
   const [approval] = await db.select().from(schema.approvals).where(eq(schema.approvals.approvalToken, token)).limit(1);
   if (!approval || !approval.isActive) return null;
+  const [existingPost] = await db.select().from(schema.posts).where(eq(schema.posts.id, approval.postId)).limit(1);
+  const originalCaption = existingPost?.caption ?? '';
   const postStatus = action.startsWith('approve') ? 'Approved' : action === 'reject' ? 'Rejected' : 'Changes Requested';
   await db.update(schema.posts).set({ caption, status: postStatus }).where(eq(schema.posts.id, approval.postId));
   await db.update(schema.approvals).set({ isActive: false, action, feedback, respondedAt: new Date() }).where(eq(schema.approvals.id, approval.id));
-  if (feedback) {
+  const learningNotes = extractLearningNotes(originalCaption, caption, feedback, action);
+  if (caption || feedback) {
+    await db.insert(schema.editFeedback).values({
+      clientId: approval.clientId,
+      postId: approval.postId,
+      originalCaption,
+      finalCaption: caption,
+      feedback,
+      feedbackType: action,
+      extractedLearning: learningNotes.join(' '),
+    });
+  }
+  if (learningNotes.length) {
     const store = await readDatabaseStore();
     const profile = store.voiceProfiles[approval.clientId] ?? emptyVoiceProfile;
-    await db.update(schema.voiceProfiles).set({ learningNotes: [...profile.learningNotes, `Client feedback: ${feedback}`] }).where(eq(schema.voiceProfiles.clientId, approval.clientId));
+    await db.update(schema.voiceProfiles).set({ learningNotes: mergeLearningNotes(profile.learningNotes, learningNotes) }).where(eq(schema.voiceProfiles.clientId, approval.clientId));
   }
   return { approval, post: { id: approval.postId } };
+}
+
+function extractLearningNotes(originalCaption: string, finalCaption: string, feedback = '', action: string) {
+  const notes: string[] = [];
+  const trimmedFeedback = feedback.trim();
+  if (trimmedFeedback) notes.push(`Client feedback: ${trimmedFeedback}`);
+  if (originalCaption && finalCaption && originalCaption.length > finalCaption.length + 80) notes.push('Client tends to prefer shorter captions.');
+  if (/#\w+/.test(originalCaption) && !/#\w+/.test(finalCaption)) notes.push('Client removed hashtags, so use fewer hashtags unless clearly useful.');
+  if (/\p{Extended_Pictographic}/u.test(originalCaption) && !/\p{Extended_Pictographic}/u.test(finalCaption)) notes.push('Client removed emojis, so avoid emojis by default.');
+  if (originalCaption && finalCaption && startsDifferently(originalCaption, finalCaption)) notes.push('Client adjusted the opening, so pay close attention to direct first lines.');
+  if (action.startsWith('approve')) notes.push('Use final approved captions as the strongest signal for future voice matching.');
+  if (action === 'changes_requested') notes.push('Client requested changes before approval.');
+  return notes;
+}
+
+function startsDifferently(originalCaption: string, finalCaption: string) {
+  const firstOriginal = originalCaption.trim().split(/\s+/).slice(0, 8).join(' ').toLowerCase();
+  const firstFinal = finalCaption.trim().split(/\s+/).slice(0, 8).join(' ').toLowerCase();
+  return Boolean(firstOriginal && firstFinal && firstOriginal !== firstFinal);
+}
+
+function mergeLearningNotes(existing: string[], incoming: string[]) {
+  return Array.from(new Set([...existing, ...incoming])).slice(-25);
 }
 
 async function saveDatabaseWeeklyIdeas(clientId: string, ideas: Array<Omit<WeeklyIdea, 'id' | 'clientId' | 'clientName'>>, sourceContext: Record<string, unknown>) {
