@@ -98,6 +98,35 @@ export async function saveGeneratedPosts(input: Omit<PostOpportunity, 'id' | 'st
   return { opportunity, posts };
 }
 
+export async function savePostIdea(input: Omit<PostOpportunity, 'id' | 'status' | 'createdAt' | 'updatedAt'>) {
+  if (hasDatabase()) return saveDatabasePostIdea(input);
+  const data = await readStore();
+  const now = new Date().toISOString();
+  const client = data.clients.find((item) => item.id === input.clientId);
+  const opportunity: PostOpportunity = {
+    ...input,
+    id: randomUUID(),
+    status: 'Idea',
+    createdAt: now,
+    updatedAt: now,
+  };
+  const post: Post = {
+    id: randomUUID(),
+    clientId: input.clientId,
+    clientName: client ? `${client.firstName} ${client.lastName}` : 'Client',
+    topic: input.topic,
+    type: input.postType,
+    caption: input.mainTakeaway || input.notes || '',
+    hashtags: [],
+    status: 'Idea',
+    updatedAt: 'Just now',
+  };
+  data.postOpportunities.unshift(opportunity);
+  data.posts.unshift(post);
+  await writeStore(data);
+  return { opportunity, post };
+}
+
 export async function updatePost(postId: string, patch: Partial<Post>) {
   if (hasDatabase()) return updateDatabasePost(postId, patch);
   const data = await readStore();
@@ -380,6 +409,36 @@ async function saveDatabaseGeneratedPosts(input: Omit<PostOpportunity, 'id' | 's
   }))).returning();
   const store = await readDatabaseStore();
   return { opportunity: store.postOpportunities.find((item) => item.id === opportunity.id)!, posts: rows.map((row) => store.posts.find((post) => post.id === row.id)!) };
+}
+
+async function saveDatabasePostIdea(input: Omit<PostOpportunity, 'id' | 'status' | 'createdAt' | 'updatedAt'>) {
+  const { db, schema } = await getDbContext();
+  const [opportunity] = await db.insert(schema.postOpportunities).values({
+    clientId: input.clientId,
+    postType: input.postType,
+    topicName: input.topic,
+    eventDate: input.date || null,
+    location: input.location,
+    peopleCompaniesToMention: input.mentions ? input.mentions.split(',').map((item) => item.trim()).filter(Boolean) : [],
+    mainTakeaway: input.mainTakeaway,
+    notes: input.notes,
+    desiredTone: input.tone,
+    callToAction: input.callToAction,
+    status: 'Idea',
+  }).returning();
+  const [postRow] = await db.insert(schema.posts).values({
+    clientId: input.clientId,
+    postOpportunityId: opportunity.id,
+    variantLabel: 'Saved idea',
+    caption: input.mainTakeaway || input.notes || '',
+    hashtags: [],
+    status: 'Idea',
+  }).returning();
+  const store = await readDatabaseStore();
+  return {
+    opportunity: store.postOpportunities.find((item) => item.id === opportunity.id)!,
+    post: store.posts.find((post) => post.id === postRow.id)!,
+  };
 }
 
 async function updateDatabasePost(postId: string, patch: Partial<Post>) {
