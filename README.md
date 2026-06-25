@@ -10,7 +10,7 @@ The UI starts empty by default. Connect Supabase to persist real clients, posts,
 - Tailwind CSS and Radix-based ShadCN UI primitives
 - Supabase Auth, Postgres, Row Level Security, and private Storage
 - OpenAI for voice profiles and LinkedIn drafts
-- SendGrid for approval email
+- Gmail for approval and reminder email, with optional SendGrid fallback
 - Twilio for approval SMS
 - Official LinkedIn OAuth placeholder for future publishing
 
@@ -45,13 +45,24 @@ Create an API key and set `OPENAI_API_KEY`. The app uses it in server-only route
 
 Prompts enforce the client voice profile, natural rhythm, no em dashes, restrained hashtags, and no emojis unless allowed.
 
-## SendGrid setup
+## Gmail email setup
+
+1. In your Google account, turn on 2-Step Verification.
+2. Create a Gmail app password for this local app.
+3. Set `GMAIL_USER` to your Gmail address.
+4. Set `GMAIL_APP_PASSWORD` to the app password.
+5. Optionally set `GMAIL_FROM_EMAIL`; otherwise the app uses `GMAIL_USER`.
+6. Trigger “Send for approval” from a post review page, or run an event reminder.
+
+Without these values the email route stays in placeholder mode unless SendGrid is configured.
+
+## SendGrid fallback setup
 
 1. Verify a sender in SendGrid.
 2. Set `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL`.
 3. Trigger “Send for approval” from a post review page.
 
-Without these values the route stays in placeholder mode and does not send an email.
+Gmail is used first when configured. SendGrid is only used when Gmail settings are absent.
 
 ## Twilio setup
 
@@ -59,7 +70,7 @@ Without these values the route stays in placeholder mode and does not send an em
 2. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER`.
 3. Set a client’s notification preference to Text or Both.
 
-SendGrid and Twilio sends are written to `notifications`. Event reminders use the same providers.
+Gmail, SendGrid, and Twilio sends are written to `notifications`. Event reminders use the same providers.
 
 ## Event photo reminders
 

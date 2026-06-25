@@ -1,8 +1,49 @@
 import type { Client } from './types';
+import nodemailer from 'nodemailer';
 
 export type NotificationChannel = 'email' | 'sms';
 
 export async function sendEmailNotification({ to, subject, body }: { to: string; subject: string; body: string }) {
+  const gmailUser = process.env.GMAIL_USER || process.env.EMAIL;
+  const gmailFrom = process.env.GMAIL_FROM_EMAIL || process.env.EMAIL_FROM || gmailUser;
+
+  if (gmailUser && process.env.GMAIL_APP_PASSWORD) {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUser,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+    const info = await transporter.sendMail({
+      from: gmailFrom,
+      to,
+      subject,
+      text: body,
+    });
+    return { status: 'sent' as const, provider: 'gmail' as const, providerMessageId: info.messageId };
+  }
+
+  if (gmailUser && process.env.EMAIL_CLIENT_ID && process.env.EMAIL_CLIENT_SECRET && process.env.EMAIL_REFRESH_TOKEN) {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: gmailUser,
+        clientId: process.env.EMAIL_CLIENT_ID,
+        clientSecret: process.env.EMAIL_CLIENT_SECRET,
+        refreshToken: process.env.EMAIL_REFRESH_TOKEN,
+      },
+    });
+    const info = await transporter.sendMail({
+      from: gmailFrom,
+      to,
+      subject,
+      text: body,
+    });
+    return { status: 'sent' as const, provider: 'gmail' as const, providerMessageId: info.messageId };
+  }
+
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
     return { status: 'placeholder' as const };
   }
@@ -21,7 +62,7 @@ export async function sendEmailNotification({ to, subject, body }: { to: string;
     }),
   });
   if (!response.ok) throw new Error(`SendGrid request failed: ${response.status}`);
-  return { status: 'sent' as const };
+  return { status: 'sent' as const, provider: 'sendgrid' as const };
 }
 
 export async function sendSmsNotification({ to, body }: { to: string; body: string }) {
