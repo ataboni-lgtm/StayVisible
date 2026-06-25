@@ -20,6 +20,8 @@ const zClientInput = z.object({
   topicsToAvoid: z.string().optional().default(''),
   notificationMethod: z.enum(['Email', 'Text', 'Both']).default('Email'),
   status: z.enum(['Onboarding Needed', 'Active', 'Paused']).default('Onboarding Needed'),
+  portalAccessEnabled: z.coerce.boolean().optional().default(false),
+  portalPassword: z.string().optional().default(''),
 });
 
 export const GET = routeHandler(async () => {
@@ -42,6 +44,8 @@ export const POST = routeHandler(async (request: NextRequest) => {
     targetAudience: parsed.data.targetAudience ?? '',
     topics: splitList(parsed.data.topics),
     topicsToAvoid: splitList(parsed.data.topicsToAvoid),
+    portalAccessEnabled: parsed.data.portalAccessEnabled,
+    portalPassword: parsed.data.portalPassword,
   });
   return NextResponse.json({ client });
 });

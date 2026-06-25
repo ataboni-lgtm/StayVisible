@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'crypto';
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import type { Approval, Client, Post, PostOpportunity, StoredData, VoiceProfile, WeeklyIdea } from './types';
@@ -22,7 +22,11 @@ export async function readStore(): Promise<StoredData> {
     const raw = await readFile(dataFile, 'utf8');
     const parsed = JSON.parse(raw) as Partial<StoredData>;
     return {
-      clients: parsed.clients ?? [],
+      clients: (parsed.clients ?? []).map((client) => ({
+        ...client,
+        portalAccessEnabled: client.portalAccessEnabled ?? false,
+        portalPasswordSet: client.portalPasswordSet ?? Boolean((client as Client & { portalPasswordHash?: string }).portalPasswordHash),
+      })),
       posts: parsed.posts ?? [],
       weeklyIdeas: parsed.weeklyIdeas ?? [],
       postOpportunities: parsed.postOpportunities ?? [],
@@ -40,19 +44,35 @@ export async function writeStore(data: StoredData) {
   await writeFile(dataFile, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-export async function upsertClient(input: Omit<Client, 'id' | 'initials'> & { id?: string }) {
+export async function upsertClient(input: Omit<Client, 'id' | 'initials' | 'portalPasswordSet'> & { id?: string; portalPassword?: string }) {
   if (hasDatabase()) return upsertDatabaseClient(input);
   const data = await readStore();
+  const existingClient = data.clients.find((item) => item.id === input.id);
   const client: Client = {
     ...input,
     id: input.id ?? randomUUID(),
     initials: `${input.firstName[0] ?? ''}${input.lastName[0] ?? ''}`.toUpperCase(),
+    portalAccessEnabled: input.portalAccessEnabled,
+    portalPasswordSet: Boolean(input.portalPassword || (existingClient as Client & { portalPasswordHash?: string } | undefined)?.portalPasswordHash),
   };
+  if (input.portalPassword) (client as Client & { portalPasswordHash?: string }).portalPasswordHash = hashPortalPassword(input.portalPassword);
+  else if ((existingClient as Client & { portalPasswordHash?: string } | undefined)?.portalPasswordHash) {
+    (client as Client & { portalPasswordHash?: string }).portalPasswordHash = (existingClient as Client & { portalPasswordHash?: string }).portalPasswordHash;
+  }
   const index = data.clients.findIndex((item) => item.id === client.id);
   if (index >= 0) data.clients[index] = client;
   else data.clients.push(client);
   await writeStore(data);
-  return client;
+  return sanitizeClient(client);
+}
+
+export async function authenticateClientPortal(email: string, password: string) {
+  if (hasDatabase()) return authenticateDatabaseClientPortal(email, password);
+  const data = await readStore();
+  const client = data.clients.find((item) => item.email.toLowerCase() === email.trim().toLowerCase() && item.status !== 'Paused' && item.portalAccessEnabled);
+  const hash = (client as Client & { portalPasswordHash?: string } | undefined)?.portalPasswordHash;
+  if (!client || !hash || !verifyPortalPassword(password, hash)) return null;
+  return sanitizeClient(client);
 }
 
 export async function saveVoiceProfile(clientId: string, profile: Partial<VoiceProfile>, onboarding: Record<string, unknown>) {
@@ -266,6 +286,8 @@ async function readDatabaseStore(): Promise<StoredData> {
       notificationMethod: client.preferredNotificationMethod,
       status: client.status,
       initials: `${client.firstName[0] ?? ''}${client.lastName[0] ?? ''}`.toUpperCase(),
+      portalAccessEnabled: client.portalAccessEnabled,
+      portalPasswordSet: Boolean(client.portalPasswordHash),
     })),
     posts: postRows.map((post) => ({
       id: post.id,
@@ -334,9 +356,10 @@ async function readDatabaseStore(): Promise<StoredData> {
   };
 }
 
-async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials'> & { id?: string }) {
+async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials' | 'portalPasswordSet'> & { id?: string; portalPassword?: string }) {
   const { db, schema } = await getDbContext();
   const clientId = input.id ?? randomUUID();
+  const passwordHash = input.portalPassword ? hashPortalPassword(input.portalPassword) : undefined;
   const values = {
     id: clientId,
     adminId: await ensureLocalAdmin(),
@@ -354,6 +377,8 @@ async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials'> & { i
     topicsToAvoid: input.topicsToAvoid,
     preferredNotificationMethod: input.notificationMethod,
     status: input.status,
+    portalAccessEnabled: input.portalAccessEnabled,
+    ...(passwordHash ? { portalPasswordHash: passwordHash } : {}),
   };
   const [row] = await db.insert(schema.clients).values(values).onConflictDoUpdate({ target: schema.clients.id, set: values }).returning();
   return {
@@ -373,7 +398,56 @@ async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials'> & { i
     notificationMethod: row.preferredNotificationMethod,
     status: row.status,
     initials: `${row.firstName[0] ?? ''}${row.lastName[0] ?? ''}`.toUpperCase(),
+    portalAccessEnabled: row.portalAccessEnabled,
+    portalPasswordSet: Boolean(row.portalPasswordHash),
   };
+}
+
+async function authenticateDatabaseClientPortal(email: string, password: string) {
+  const { db, schema } = await getDbContext();
+  const rows = await db.select().from(schema.clients);
+  const row = rows.find((client) => client.email.toLowerCase() === email.trim().toLowerCase());
+  if (!row || row.status === 'Paused' || !row.portalAccessEnabled || !row.portalPasswordHash) return null;
+  if (!verifyPortalPassword(password, row.portalPasswordHash)) return null;
+  return {
+    id: row.id,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    email: row.email,
+    phone: row.phone ?? '',
+    company: row.company ?? '',
+    jobTitle: row.jobTitle ?? '',
+    industry: row.industry ?? '',
+    location: row.location ?? '',
+    linkedInUrl: row.linkedInProfileUrl ?? '',
+    targetAudience: row.targetAudience ?? '',
+    topics: row.topics,
+    topicsToAvoid: row.topicsToAvoid,
+    notificationMethod: row.preferredNotificationMethod,
+    status: row.status,
+    initials: `${row.firstName[0] ?? ''}${row.lastName[0] ?? ''}`.toUpperCase(),
+    portalAccessEnabled: row.portalAccessEnabled,
+    portalPasswordSet: true,
+  };
+}
+
+function sanitizeClient(client: Client) {
+  const { portalPasswordHash: _portalPasswordHash, ...safeClient } = client as Client & { portalPasswordHash?: string };
+  return safeClient;
+}
+
+function hashPortalPassword(password: string) {
+  const salt = randomBytes(16).toString('hex');
+  const hash = scryptSync(password, salt, 64).toString('hex');
+  return `scrypt:${salt}:${hash}`;
+}
+
+function verifyPortalPassword(password: string, storedHash: string) {
+  const [scheme, salt, hash] = storedHash.split(':');
+  if (scheme !== 'scrypt' || !salt || !hash) return false;
+  const expected = Buffer.from(hash, 'hex');
+  const actual = scryptSync(password, salt, expected.length);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
 async function saveDatabaseVoiceProfile(clientId: string, profile: Partial<VoiceProfile>, _onboarding: Record<string, unknown>) {

@@ -26,6 +26,8 @@ export interface Client {
   notificationMethod: 'Email' | 'Text' | 'Both';
   status: ClientStatus;
   initials: string;
+  portalAccessEnabled: boolean;
+  portalPasswordSet: boolean;
 }
 
 export interface Post {

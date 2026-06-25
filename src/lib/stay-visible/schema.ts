@@ -59,6 +59,8 @@ export const clients = pgTable(
     preferredNotificationMethod: notificationMethod('preferred_notification_method').notNull().default('Email'),
     status: clientStatus('status').notNull().default('Onboarding Needed'),
     recentActivityNotes: text('recent_activity_notes'),
+    portalAccessEnabled: boolean('portal_access_enabled').notNull().default(false),
+    portalPasswordHash: text('portal_password_hash'),
     ...timestamps,
   },
   (table) => ({

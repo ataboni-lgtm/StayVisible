@@ -19,7 +19,7 @@ export function ClientPortalLoginForm() {
       const response = await fetch('/api/client-portal/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.get('email') }),
+        body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
       });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error);
@@ -34,6 +34,7 @@ export function ClientPortalLoginForm() {
 
   return <form onSubmit={submit} className="space-y-5">
     <Field label="Email"><input required type="email" name="email" autoComplete="email" className={inputClass} placeholder="you@example.com" /></Field>
+    <Field label="Password"><input required type="password" name="password" autoComplete="current-password" className={inputClass} /></Field>
     <button disabled={loading} className={`${primaryButtonClass} w-full`}>
       {loading ? <LoaderCircle className="size-4 animate-spin" /> : <LogIn className="size-4" />}
       {loading ? 'Opening portal...' : 'Open client portal'}

@@ -35,6 +35,22 @@ export default async function ClientPortalPage() {
         <h1 className="page-title">What should we know about?</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Add upcoming events now. Photos and final takeaways can come later.</p>
       </div>
+      <section className="mb-7 grid gap-4 @3xl/page:grid-cols-3">
+        <div className="surface-card p-5 @3xl/page:col-span-2">
+          <p className="eyebrow">Your profile</p>
+          <h2 className="mt-2 text-xl font-semibold text-[#0B1F3A]">{client.firstName} {client.lastName}</h2>
+          <div className="mt-4 grid gap-4 text-sm @lg/page:grid-cols-2">
+            <div><p className="font-semibold text-[#0B1F3A]">Role</p><p className="mt-1 text-slate-500">{client.jobTitle || 'Not added yet'}{client.company ? ` at ${client.company}` : ''}</p></div>
+            <div><p className="font-semibold text-[#0B1F3A]">Location</p><p className="mt-1 text-slate-500">{client.location || 'Not added yet'}</p></div>
+            <div><p className="font-semibold text-[#0B1F3A]">Email</p><p className="mt-1 text-slate-500">{client.email}</p></div>
+            <div><p className="font-semibold text-[#0B1F3A]">LinkedIn</p><p className="mt-1 truncate text-slate-500">{client.linkedInUrl || 'Not added yet'}</p></div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-blue-100 bg-[#E0F2FE]/60 p-5">
+          <p className="text-sm font-semibold text-[#0B1F3A]">Only your information is shown here.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Anything you submit goes to your Stay Visible admin to draft or schedule.</p>
+        </div>
+      </section>
       <ClientPortalEventForm />
       <section className="mt-7 surface-card overflow-hidden">
         <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
