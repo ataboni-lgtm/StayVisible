@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ImagePlus, LoaderCircle, Sparkles, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
-import { clients } from '@/lib/stay-visible/demo-data';
+import type { Client } from '@/lib/stay-visible/types';
 import { Field, inputClass, primaryButtonClass, secondaryButtonClass, textareaClass } from './ui';
 
 const postTypes = ['Event Recap', 'Conference Post', 'Client Meeting', 'Market Insight', 'Company Repost', 'Article Share', 'Deal Announcement', 'General Update'];
 
-export function PostOpportunityForm() {
+export function PostOpportunityForm({ clients }: { clients: Client[] }) {
   const [files, setFiles] = useState<string[]>([]); const [generating, setGenerating] = useState(false); const router = useRouter();
   async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setGenerating(true); const data = Object.fromEntries(new FormData(event.currentTarget).entries());
     try { const response = await fetch('/api/generate-linkedin-posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, photoContext: files.join(', ') }) }); if (!response.ok) throw new Error(); const json = await response.json(); sessionStorage.setItem('stayvisible-generated', JSON.stringify(json.options)); toast.success('Three post options are ready'); }

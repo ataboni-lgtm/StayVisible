@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { Check, ClipboardCheck, Hash, MessageSquare, RotateCcw, Send, ThumbsDown } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Post } from '@/lib/stay-visible/types';
 import { EmptyState, primaryButtonClass, secondaryButtonClass, textareaClass } from './ui';
 
-export function ApprovalEditor({ token }: { token: string }) {
-  const [caption, setCaption] = useState('');
+export function ApprovalEditor({ token, post }: { token: string; post?: Post }) {
+  const [caption, setCaption] = useState(post?.caption ?? '');
   const [done, setDone] = useState(false);
   const [feedback, setFeedback] = useState('');
 

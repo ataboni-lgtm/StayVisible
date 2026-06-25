@@ -1,8 +1,8 @@
-name: your-app-name
+name: stay-visible
 services:
-  your-app-name:
+  stay-visible:
     build: .
-    image: your-app-name
+    image: stay-visible
     pull_policy: never
     restart: unless-stopped
     user: root
@@ -29,22 +29,22 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - your-app-data-volume:/app/data
+      - stay-visible-data-volume:/app/data
       - next-node-modules:/app/node_modules
 
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: your-app-name
-      POSTGRES_USER: your-app-name
-      POSTGRES_PASSWORD: your-app-name
+      POSTGRES_DB: stay_visible
+      POSTGRES_USER: stay_visible
+      POSTGRES_PASSWORD: stay_visible
     ports:
       - '6767:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
 volumes:
-  your-app-data-volume:
+  stay-visible-data-volume:
   postgres-data:
   next-node-modules:

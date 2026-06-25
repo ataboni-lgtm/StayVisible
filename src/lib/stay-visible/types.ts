@@ -40,6 +40,36 @@ export interface Post {
   updatedAt: string;
 }
 
+export interface PostOpportunity {
+  id: string;
+  clientId: string;
+  postType: string;
+  topic: string;
+  date?: string;
+  location?: string;
+  mentions?: string;
+  mainTakeaway: string;
+  notes?: string;
+  tone?: string;
+  callToAction?: string;
+  photoContext?: string;
+  status: PostStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Approval {
+  id: string;
+  token: string;
+  postId: string;
+  clientId: string;
+  status: 'active' | 'closed';
+  action?: string;
+  feedback?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WeeklyIdea {
   id: string;
   clientId: string;
@@ -64,4 +94,13 @@ export interface VoiceProfile {
   dos: string[];
   donts: string[];
   learningNotes: string[];
+}
+
+export interface StoredData {
+  clients: Client[];
+  posts: Post[];
+  weeklyIdeas: WeeklyIdea[];
+  postOpportunities: PostOpportunity[];
+  approvals: Approval[];
+  voiceProfiles: Record<string, VoiceProfile>;
 }

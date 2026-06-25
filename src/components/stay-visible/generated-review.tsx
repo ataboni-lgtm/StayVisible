@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { EmptyState, primaryButtonClass, secondaryButtonClass } from './ui';
 
 export function GeneratedReview() {
-  const [options, setOptions] = useState<Array<{ label: string; content: string }>>([]);
+  const [options, setOptions] = useState<Array<{ label: string; content: string; postId?: string }>>([]);
   const [selected, setSelected] = useState(0);
   const router = useRouter();
 
@@ -15,8 +15,8 @@ export function GeneratedReview() {
     const stored = sessionStorage.getItem('stayvisible-generated');
     if (stored) {
       try {
-        const parsed = JSON.parse(stored) as Array<{ label?: string; title?: string; content: string }>;
-        setOptions(parsed.map((option, index) => ({ label: option.label ?? option.title ?? `Option ${index + 1}`, content: option.content })));
+        const parsed = JSON.parse(stored) as Array<{ label?: string; title?: string; content: string; postId?: string }>;
+        setOptions(parsed.map((option, index) => ({ label: option.label ?? option.title ?? `Option ${index + 1}`, content: option.content, postId: option.postId })));
       } catch {}
     }
   }, []);
@@ -24,7 +24,8 @@ export function GeneratedReview() {
   function continueReview() {
     if (!options[selected]) return;
     sessionStorage.setItem('stayvisible-selected', options[selected].content);
-    router.push('/posts/generated/review');
+    const postId = options[selected].postId;
+    router.push(postId ? `/posts/${postId}/review` : '/posts/generated/review');
   }
 
   if (!options.length) return <EmptyState title="No generated drafts yet" description="Create a post opportunity first, then the generated options will appear here." />;

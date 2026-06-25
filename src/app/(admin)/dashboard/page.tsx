@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { CalendarDays, CheckCircle2, Clock3, Lightbulb, MessageSquareText, Sparkles, UserPlus } from 'lucide-react';
-import { clients, posts, weeklyIdeas } from '@/lib/stay-visible/demo-data';
+import { readStore } from '@/lib/stay-visible/local-store';
 import { EmptyState, MetricCard, PageHeader } from '@/components/stay-visible/ui';
 
-export default function DashboardPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage() {
+  const { clients, posts, weeklyIdeas } = await readStore();
   const attentionPosts = posts.filter((post) => post.status === 'Sent for Approval' || post.status === 'Changes Requested');
   const onboardingCount = clients.filter((client) => client.status === 'Onboarding Needed').length;
   const waitingCount = posts.filter((post) => post.status === 'Sent for Approval').length;
