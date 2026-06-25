@@ -1,0 +1,3 @@
+import { Logo } from '@/components/stay-visible/logo';
+import { LoginForm } from '@/components/stay-visible/login-form';
+export default function LoginPage() { return <main className="grid min-h-screen place-items-center bg-[#F8FAFC] p-4"><div className="w-full max-w-md"><div className="mb-8 flex justify-center"><Logo /></div><section className="surface-card p-7 @md/page:p-8"><p className="eyebrow">Welcome back</p><h1 className="mt-2 text-2xl font-semibold text-[#0B1F3A]">Keep your clients visible</h1><p className="mb-7 mt-2 text-sm leading-6 text-slate-500">Sign in to manage voices, drafts, and approvals.</p><LoginForm /></section><p className="mt-5 text-center text-xs text-slate-400">Private workspace · Powered by Supabase Auth</p></div></main>; }

@@ -1,0 +1,50 @@
+name: your-app-name
+services:
+  your-app-name:
+    build: .
+    image: your-app-name
+    pull_policy: never
+    restart: unless-stopped
+    user: root
+    command: >-
+      sh -lc "mkdir -p /app/node_modules /app/.next &&
+      chown -R node:node /app/node_modules /app/.next &&
+      exec su node -s /bin/sh -c 'npm run dev; tail -f /dev/null'"
+    ports:
+      - '3005:3005'
+    env_file:
+      - .env.local
+    environment:
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=300
+      - NEXT_WEBPACK_USEPOLLING=true
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+    cap_add:
+      - SYS_ADMIN
+    depends_on:
+      - postgres
+    working_dir: /app
+    volumes:
+      - .:/app
+      - your-app-data-volume:/app/data
+      - next-node-modules:/app/node_modules
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: your-app-name
+      POSTGRES_USER: your-app-name
+      POSTGRES_PASSWORD: your-app-name
+    ports:
+      - '6767:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  your-app-data-volume:
+  postgres-data:
+  next-node-modules:

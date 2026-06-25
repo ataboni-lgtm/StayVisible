@@ -1,0 +1,7 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { LoaderCircle, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
+import { Field, inputClass, primaryButtonClass } from './ui';
+export function LoginForm() { const [loading, setLoading] = useState(false); const router = useRouter(); async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setLoading(true); const form = new FormData(event.currentTarget); const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: form.get('email'), password: form.get('password') }) }); if (response.ok) { router.push('/dashboard'); router.refresh(); } else { const result = await response.json() as { error?: string }; toast.error(result.error ?? 'Unable to sign in'); setLoading(false); } } return <form onSubmit={submit} className="space-y-5"><Field label="Email"><input required type="email" name="email" autoComplete="email" className={inputClass} /></Field><Field label="Password"><input required type="password" name="password" autoComplete="current-password" className={inputClass} /></Field><button disabled={loading} className={`${primaryButtonClass} w-full`}>{loading ? <LoaderCircle className="size-4 animate-spin" /> : <LogIn className="size-4" />}{loading ? 'Signing in…' : 'Sign in'}</button></form>; }

@@ -1,0 +1,2 @@
+-- Optional seed file intentionally left empty.
+-- Add local-only records here when you want test data for your own workspace.
