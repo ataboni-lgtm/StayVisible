@@ -1,8 +1,8 @@
-import Link from 'next/link';
-import { ArrowRight, CalendarDays, FilePenLine } from 'lucide-react';
+import { ArrowRight, CalendarDays } from 'lucide-react';
 import { readStore } from '@/lib/stay-visible/local-store';
+import { WeeklyIdeaDraftButton } from '@/components/stay-visible/weekly-idea-draft-button';
 import { WeeklyIdeasGenerator } from '@/components/stay-visible/weekly-ideas-generator';
-import { EmptyState, PageHeader, secondaryButtonClass } from '@/components/stay-visible/ui';
+import { EmptyState, PageHeader } from '@/components/stay-visible/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ export default async function WeeklyIdeasPage() {
           <div><p className="font-semibold text-[#0B1F3A]">Why it works</p><p className="mt-1">{idea.reason}</p></div>
           <div><p className="font-semibold text-[#0B1F3A]">Suggested angle</p><p className="mt-1">{idea.angle}</p></div>
         </div>
-        <Link href="/posts/new" className={`${secondaryButtonClass} mt-5 w-full`}><FilePenLine className="size-4" />Draft Post</Link>
+        <WeeklyIdeaDraftButton idea={idea} />
       </article>)}
     </div> : <EmptyState title="No weekly ideas yet" description="Add active clients and recent activity notes, then generate this week’s ideas." />}</div>;
 }

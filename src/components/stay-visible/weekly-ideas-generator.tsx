@@ -43,7 +43,7 @@ export function WeeklyIdeasGenerator({ clients }: { clients: Client[] }) {
     </select>
     <input value={notes} onChange={(event) => setNotes(event.target.value)} className={inputClass} placeholder="Add recent activity notes to inspire ideas..." />
     <button type="button" onClick={generate} disabled={generating || !clientId} className={primaryButtonClass}>
-      <Sparkles className="size-4" />{generating ? 'Generating...' : 'Generate ideas'}
+      <Sparkles className="size-4" />{generating ? 'Generating...' : "Generate this week's ideas"}
     </button>
   </section>;
 }
