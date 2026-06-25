@@ -17,7 +17,7 @@ const navigation = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
   const [open, setOpen] = useState(false);
 
   return (
