@@ -31,6 +31,7 @@ export interface Client {
 export interface Post {
   id: string;
   clientId: string;
+  postOpportunityId?: string;
   clientName: string;
   topic: string;
   type: string;

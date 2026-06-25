@@ -15,6 +15,13 @@
       "when": 1782411000000,
       "tag": "0003_stay_visible_runtime_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782413400000,
+      "tag": "0004_post_opportunity_photo_context",
+      "breakpoints": true
     }
   ]
 }

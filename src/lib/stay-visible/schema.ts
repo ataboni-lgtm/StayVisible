@@ -110,6 +110,7 @@ export const postOpportunities = pgTable(
     peopleCompaniesToMention: text('people_companies_to_mention').array().notNull().default([]),
     mainTakeaway: text('main_takeaway'),
     notes: text('notes'),
+    photoContext: text('photo_context'),
     desiredTone: text('desired_tone'),
     callToAction: text('call_to_action'),
     status: postStatus('status').notNull().default('Idea'),

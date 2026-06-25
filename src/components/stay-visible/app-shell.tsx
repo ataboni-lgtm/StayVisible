@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, ChevronDown, FilePenLine, Lightbulb, Menu, Plus, Settings, Users, X } from 'lucide-react';
+import { BarChart3, CalendarDays, ChevronDown, FilePenLine, Lightbulb, Menu, Plus, Settings, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Logo } from './logo';
@@ -10,6 +10,7 @@ import { Logo } from './logo';
 const navigation = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { href: '/clients', label: 'Clients', icon: Users },
+  { href: '/event-sheet', label: 'Event Sheet', icon: CalendarDays },
   { href: '/posts/new', label: 'Posts', icon: FilePenLine },
   { href: '/weekly-ideas', label: 'Weekly Ideas', icon: Lightbulb },
   { href: '/settings', label: 'Settings', icon: Settings },
