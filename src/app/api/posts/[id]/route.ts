@@ -7,6 +7,7 @@ import { updatePost } from '@/lib/stay-visible/local-store';
 const zPostPatch = z.object({
   caption: z.string().min(1).optional(),
   status: z.enum(['Idea', 'Draft', 'Generated', 'Sent for Approval', 'Changes Requested', 'Approved', 'Posted', 'Rejected']).optional(),
+  scheduledFor: z.string().optional(),
 });
 
 export const PATCH = routeHandler(async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {

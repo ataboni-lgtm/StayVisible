@@ -153,6 +153,7 @@ export async function updatePost(postId: string, patch: Partial<Post>) {
   const data = await readStore();
   const post = data.posts.find((item) => item.id === postId);
   if (!post) return null;
+  if (patch.status === 'Posted' && !patch.postedAt) patch.postedAt = new Date().toISOString();
   Object.assign(post, patch, { updatedAt: 'Just now' });
   await writeStore(data);
   return post;
@@ -298,6 +299,8 @@ async function readDatabaseStore(): Promise<StoredData> {
       caption: post.caption,
       hashtags: post.hashtags,
       status: post.status,
+      scheduledFor: post.scheduledFor ?? undefined,
+      postedAt: post.postedAt?.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
     })),
     weeklyIdeas: ideaRows.map((idea) => ({
@@ -522,9 +525,11 @@ async function saveDatabasePostIdea(input: Omit<PostOpportunity, 'id' | 'status'
 
 async function updateDatabasePost(postId: string, patch: Partial<Post>) {
   const { db, schema, eq } = await getDbContext();
-  const values: { caption?: string; status?: Post['status'] } = {};
+  const values: { caption?: string; status?: Post['status']; scheduledFor?: string | null; postedAt?: Date } = {};
   if (patch.caption) values.caption = patch.caption;
   if (patch.status) values.status = patch.status;
+  if ('scheduledFor' in patch) values.scheduledFor = patch.scheduledFor || null;
+  if (patch.status === 'Posted') values.postedAt = patch.postedAt ? new Date(patch.postedAt) : new Date();
   const [row] = await db.update(schema.posts).set(values).where(eq(schema.posts.id, postId)).returning();
   if (!row) return null;
   const store = await readDatabaseStore();

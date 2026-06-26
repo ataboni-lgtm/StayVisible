@@ -125,5 +125,6 @@ With Supabase configured, use a new 32-byte random token created by the database
 - `/approve/[token]`
 - `/client-login`, `/client-portal`
 - `/event-sheet`
+- `/content-calendar`
 - `/weekly-ideas`
 - `/settings`

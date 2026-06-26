@@ -40,6 +40,8 @@ export interface Post {
   caption: string;
   hashtags: string[];
   status: PostStatus;
+  scheduledFor?: string;
+  postedAt?: string;
   updatedAt: string;
 }
 

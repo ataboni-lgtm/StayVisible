@@ -36,6 +36,13 @@
       "when": 1782417600000,
       "tag": "0006_event_reminder_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782421200000,
+      "tag": "0007_post_content_calendar",
+      "breakpoints": true
     }
   ]
 }

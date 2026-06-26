@@ -156,6 +156,7 @@ export const posts = pgTable(
     hashtags: text('hashtags').array().notNull().default([]),
     selected: boolean('selected').notNull().default(false),
     status: postStatus('status').notNull().default('Draft'),
+    scheduledFor: date('scheduled_for'),
     approvedAt: timestamp('approved_at', { withTimezone: true }),
     postedAt: timestamp('posted_at', { withTimezone: true }),
     ...timestamps,
@@ -163,6 +164,7 @@ export const posts = pgTable(
   (table) => ({
     clientIdx: index('posts_client_id_idx').on(table.clientId),
     statusIdx: index('posts_status_idx').on(table.status),
+    scheduledForIdx: index('posts_scheduled_for_idx').on(table.scheduledFor),
   }),
 );
 
