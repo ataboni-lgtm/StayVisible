@@ -13,7 +13,7 @@ const navigation = [
   { href: '/event-sheet', label: 'Event Sheet', icon: CalendarDays },
   { href: '/content-calendar', label: 'Content Calendar', icon: CalendarDays },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/posts/new', label: 'Posts', icon: FilePenLine },
+  { href: '/posts', label: 'Posts', icon: FilePenLine },
   { href: '/weekly-ideas', label: 'Weekly Ideas', icon: Lightbulb },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between"><Logo /><button onClick={() => setOpen(false)} className="lg:hidden"><X className="size-5" /></button></div>
         <nav className="mt-9 space-y-1.5">
           {navigation.map((item) => {
-            const active = pathname === item.href || (item.href === '/clients' && pathname.startsWith('/clients')) || (item.href === '/posts/new' && pathname.startsWith('/posts'));
+            const active = pathname === item.href || (item.href === '/clients' && pathname.startsWith('/clients')) || (item.href === '/posts' && pathname.startsWith('/posts'));
             return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={cn('flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors', active ? 'bg-[#E0F2FE] text-[#1D4ED8]' : 'text-slate-600 hover:bg-slate-50 hover:text-[#0B1F3A]')}><item.icon className="size-4.5" />{item.label}</Link>;
           })}
         </nav>

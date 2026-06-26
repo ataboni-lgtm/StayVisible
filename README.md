@@ -132,7 +132,7 @@ With Supabase configured, use a new 32-byte random token created by the database
 - `/dashboard`
 - `/clients`, `/clients/new`, `/clients/[id]`
 - `/clients/[id]/onboarding`, `/clients/[id]/voice-profile`
-- `/posts/new`, `/posts/[id]`, `/posts/[id]/review`
+- `/posts`, `/posts/new`, `/posts/[id]`, `/posts/[id]/review`
 - `/approve/[token]`
 - `/client-login`, `/client-portal`
 - `/event-sheet`
