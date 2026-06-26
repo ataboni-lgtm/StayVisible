@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CalendarDays, CheckCircle2, Clock3, FilePenLine, MessageSquareText, Plus, Send } from 'lucide-react';
-import { EmptyState, MetricCard, PageHeader, StatusBadge, primaryButtonClass, secondaryButtonClass } from '@/components/stay-visible/ui';
+import { EmptyState, MetricCard, PageHeader, ScheduledBadge, StatusBadge, primaryButtonClass, secondaryButtonClass } from '@/components/stay-visible/ui';
 import { readStore } from '@/lib/stay-visible/local-store';
 import type { Post, PostStatus } from '@/lib/stay-visible/types';
 
@@ -56,6 +56,7 @@ function PostRow({ post }: { post: Post }) {
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge status={post.status} />
+        {post.scheduledFor && post.status !== 'Posted' && <ScheduledBadge />}
         <span className="rounded-full bg-[#E0F2FE] px-2.5 py-1 text-[11px] font-semibold text-blue-700">{post.type}</span>
       </div>
       <p className="mt-3 truncate text-sm font-semibold text-[#0B1F3A]">{post.topic}</p>

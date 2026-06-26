@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CalendarDays, CheckCircle2, Clock3, FilePenLine, Plus } from 'lucide-react';
 import { readStore } from '@/lib/stay-visible/local-store';
 import type { Post } from '@/lib/stay-visible/types';
-import { EmptyState, PageHeader, StatusBadge, primaryButtonClass } from '@/components/stay-visible/ui';
+import { EmptyState, PageHeader, ScheduledBadge, StatusBadge, primaryButtonClass } from '@/components/stay-visible/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +45,8 @@ export default async function ContentCalendarPage() {
               <div className="flex flex-col gap-3 @md/page:flex-row @md/page:items-start @md/page:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-[#E0F2FE] px-2.5 py-1 text-[11px] font-semibold text-blue-700">{formatDate(calendarDate(post))}</span>
+                    <span className={post.status === 'Posted' ? 'rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700' : 'rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700'}>{formatDate(calendarDate(post))}</span>
+                    {post.status !== 'Posted' && <ScheduledBadge />}
                     <StatusBadge status={post.status} />
                   </div>
                   <p className="mt-3 text-sm font-semibold text-[#0B1F3A]">{post.topic}</p>

@@ -11,12 +11,16 @@ export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: 
 export function StatusBadge({ status }: { status: ClientStatus | PostStatus }) {
   const styles: Record<string, string> = {
     Active: 'bg-emerald-50 text-emerald-700 ring-emerald-600/15', Paused: 'bg-slate-100 text-slate-600 ring-slate-500/10',
-    'Onboarding Needed': 'bg-amber-50 text-amber-700 ring-amber-600/15', 'Sent for Approval': 'bg-blue-50 text-blue-700 ring-blue-600/15',
+    'Onboarding Needed': 'bg-amber-50 text-amber-700 ring-amber-600/15', 'Sent for Approval': 'bg-purple-50 text-purple-700 ring-purple-600/15',
     'Changes Requested': 'bg-orange-50 text-orange-700 ring-orange-600/15', Approved: 'bg-emerald-50 text-emerald-700 ring-emerald-600/15',
-    Posted: 'bg-slate-100 text-slate-700 ring-slate-500/10', Rejected: 'bg-red-50 text-red-700 ring-red-600/15',
-    Idea: 'bg-violet-50 text-violet-700 ring-violet-600/15', Draft: 'bg-slate-100 text-slate-700 ring-slate-500/10', Generated: 'bg-sky-50 text-sky-700 ring-sky-600/15',
+    Posted: 'bg-emerald-50 text-emerald-700 ring-emerald-600/15', Rejected: 'bg-red-50 text-red-700 ring-red-600/15',
+    Idea: 'bg-blue-50 text-blue-700 ring-blue-600/15', Draft: 'bg-blue-50 text-blue-700 ring-blue-600/15', Generated: 'bg-blue-50 text-blue-700 ring-blue-600/15',
   };
   return <span className={cn('inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset', styles[status])}>{status}</span>;
+}
+
+export function ScheduledBadge() {
+  return <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/15">Scheduled</span>;
 }
 
 export function MetricCard({ label, value, helper, icon: Icon, tone = 'blue', href }: { label: string; value: number; helper: string; icon: LucideIcon; tone?: 'blue' | 'sand' | 'sky' | 'green'; href: string }) {
