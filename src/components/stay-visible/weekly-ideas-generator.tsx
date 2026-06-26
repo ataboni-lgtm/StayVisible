@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Client } from '@/lib/stay-visible/types';
+import { clientDisplayName } from '@/lib/stay-visible/client-display';
 import { inputClass, primaryButtonClass } from './ui';
 
 export function WeeklyIdeasGenerator({ clients }: { clients: Client[] }) {
@@ -39,7 +40,7 @@ export function WeeklyIdeasGenerator({ clients }: { clients: Client[] }) {
 
   return <section className="surface-card mb-6 grid gap-4 p-4 @lg/page:grid-cols-[1fr_2fr_auto]">
     <select value={clientId} onChange={(event) => setClientId(event.target.value)} className={inputClass}>
-      {activeClients.length ? activeClients.map((client) => <option key={client.id} value={client.id}>{client.firstName} {client.lastName}</option>) : <option value="">No active clients</option>}
+      {activeClients.length ? activeClients.map((client) => <option key={client.id} value={client.id}>{clientDisplayName(client)}</option>) : <option value="">No active clients</option>}
     </select>
     <input value={notes} onChange={(event) => setNotes(event.target.value)} className={inputClass} placeholder="Add recent activity notes to inspire ideas..." />
     <button type="button" onClick={generate} disabled={generating || !clientId} className={primaryButtonClass}>

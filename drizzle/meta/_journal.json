@@ -50,6 +50,13 @@
       "when": 1782507600000,
       "tag": "0008_content_analytics",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782511200000,
+      "tag": "0009_company_clients",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { FileText, LoaderCircle, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Client, PostOpportunity } from '@/lib/stay-visible/types';
+import { clientDisplayName } from '@/lib/stay-visible/client-display';
 import { Field, inputClass, primaryButtonClass, secondaryButtonClass, textareaClass } from './ui';
 
 const postTypes = ['Event Recap', 'Conference Post', 'Client Meeting', 'Market Insight', 'Company Repost', 'Article Share', 'Deal Announcement', 'General Update'];
@@ -86,7 +87,7 @@ export function EventSheet({ clients, opportunities }: { clients: Client[]; oppo
 
   return <div className="space-y-6">
     <form onSubmit={createEvent} className="surface-card grid gap-4 p-5 @4xl/page:grid-cols-4">
-      <Field label="Client"><select required name="clientId" className={inputClass}><option value="">Choose client</option>{clients.filter((client) => client.status !== 'Paused').map((client) => <option key={client.id} value={client.id}>{client.firstName} {client.lastName}</option>)}</select></Field>
+      <Field label="Client"><select required name="clientId" className={inputClass}><option value="">Choose client</option>{clients.filter((client) => client.status !== 'Paused').map((client) => <option key={client.id} value={client.id}>{clientDisplayName(client)}</option>)}</select></Field>
       <Field label="Post type"><select name="postType" className={inputClass}>{postTypes.map((type) => <option key={type}>{type}</option>)}</select></Field>
       <Field label="Event name"><input required name="topic" className={inputClass} placeholder="Conference, lunch, meeting..." /></Field>
       <Field label="Date"><input name="date" type="date" className={inputClass} /></Field>
@@ -107,7 +108,7 @@ export function EventSheet({ clients, opportunities }: { clients: Client[]; oppo
               const client = clients.find((item) => item.id === opportunity.clientId);
               return <tr key={opportunity.id} className="align-top">
                 <td className="px-5 py-4 text-slate-600">{opportunity.date || 'No date'}</td>
-                <td className="px-5 py-4 font-medium text-[#0B1F3A]">{client ? `${client.firstName} ${client.lastName}` : 'Client'}</td>
+                <td className="px-5 py-4 font-medium text-[#0B1F3A]">{client ? clientDisplayName(client) : 'Client'}</td>
                 <td className="px-5 py-4"><p className="font-medium text-[#0B1F3A]">{opportunity.topic}</p><p className="mt-1 text-xs text-slate-400">{opportunity.postType}</p></td>
                 <td className="px-5 py-4 text-slate-600">{opportunity.location || 'TBD'}</td>
                 <td className="px-5 py-4"><textarea value={photoNotes[opportunity.id] ?? ''} onChange={(event) => setPhotoNotes((notes) => ({ ...notes, [opportunity.id]: event.target.value }))} className={`${textareaClass} min-h-20`} placeholder="Add photo filenames, captions, or what to remember later..." /></td>

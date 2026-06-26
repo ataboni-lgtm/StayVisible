@@ -44,6 +44,7 @@ export const clients = pgTable(
     adminId: uuid('admin_id')
       .notNull()
       .references(() => admins.id, { onDelete: 'cascade' }),
+    clientType: text('client_type').notNull().default('Individual'),
     firstName: text('first_name').notNull(),
     lastName: text('last_name').notNull(),
     email: text('email').notNull(),
@@ -66,6 +67,7 @@ export const clients = pgTable(
   (table) => ({
     adminIdx: index('clients_admin_id_idx').on(table.adminId),
     statusIdx: index('clients_status_idx').on(table.status),
+    clientTypeIdx: index('clients_client_type_idx').on(table.clientType),
   }),
 );
 

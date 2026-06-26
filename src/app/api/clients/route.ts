@@ -6,6 +6,7 @@ import { readStore, upsertClient } from '@/lib/stay-visible/local-store';
 
 const zClientInput = z.object({
   id: z.string().uuid().optional(),
+  clientType: z.enum(['Individual', 'Company']).default('Individual'),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),

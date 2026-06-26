@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BriefcaseBusiness, Building2, ExternalLink, FilePenLine, Mail, MapPin, Pencil, Phone, Plus, Sparkles } from 'lucide-react';
 import { readStore } from '@/lib/stay-visible/local-store';
+import { clientDisplayName, clientRoleLine } from '@/lib/stay-visible/client-display';
 import { EmptyState, PageHeader, StatusBadge, primaryButtonClass, secondaryButtonClass } from '@/components/stay-visible/ui';
 
 export const dynamic = 'force-dynamic';
@@ -10,9 +11,10 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const { clients } = await readStore();
   const client = clients.find((item) => item.id === id);
   if (!client) return <EmptyState title="Client not found" description="Add a client first, then their profile will appear here." action={<Link href="/clients/new" className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#2563EB] px-5 text-sm font-semibold text-white"><Plus className="size-4" />Add client</Link>} />;
-  const roleLine = [client.jobTitle, client.company].filter(Boolean).join(' at ');
+  const displayName = clientDisplayName(client);
+  const roleLine = clientRoleLine(client);
   return <div className="@container/page">
-    <PageHeader eyebrow="Client profile" title={`${client.firstName} ${client.lastName}`} description={roleLine || 'Client details, LinkedIn voice, and content workflow.'} action={<div className="flex flex-wrap gap-2">
+    <PageHeader eyebrow="Client profile" title={displayName} description={roleLine || 'Client details, LinkedIn voice, and content workflow.'} action={<div className="flex flex-wrap gap-2">
       <Link href={`/clients/${client.id}/edit`} className={secondaryButtonClass}><Pencil className="size-4" />Edit profile</Link>
       <Link href={`/clients/${client.id}/onboarding`} className={primaryButtonClass}><Sparkles className="size-4" />Onboarding</Link>
       <Link href={`/posts/new`} className={secondaryButtonClass}><FilePenLine className="size-4" />Draft post</Link>
@@ -22,10 +24,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <div className="flex items-start gap-4">
           <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-[#E0F2FE] text-xl font-bold text-[#2563EB]">{client.initials}</span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-[#0B1F3A]">{client.firstName} {client.lastName}</h2>
-            <p className="mt-1 text-sm text-slate-500">{client.email}</p>
+            <h2 className="text-lg font-semibold text-[#0B1F3A]">{displayName}</h2>
+            <p className="mt-1 text-sm text-slate-500">{client.clientType === 'Company' ? `${client.firstName} ${client.lastName} · ${client.email}` : client.email}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <StatusBadge status={client.status} />
+              <span className="rounded-full bg-[#E0F2FE] px-2.5 py-1 text-[11px] font-semibold text-blue-700">{client.clientType}</span>
               <span className="rounded-full bg-[#FFF6E5] px-2.5 py-1 text-[11px] font-semibold text-amber-800">{client.notificationMethod}</span>
             </div>
           </div>
@@ -33,11 +36,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <div className="mt-6 space-y-3 text-sm">
           <ProfileRow icon={Mail} label="Email" value={client.email} />
           <ProfileRow icon={Phone} label="Phone" value={client.phone || 'Not added'} />
-          <ProfileRow icon={Building2} label="Company" value={client.company || 'Not added'} />
-          <ProfileRow icon={BriefcaseBusiness} label="Job title" value={client.jobTitle || 'Not added'} />
+          <ProfileRow icon={Building2} label={client.clientType === 'Company' ? 'Account' : 'Company'} value={client.company || 'Not added'} />
+          <ProfileRow icon={BriefcaseBusiness} label={client.clientType === 'Company' ? 'Positioning' : 'Job title'} value={client.jobTitle || 'Not added'} />
           <ProfileRow icon={MapPin} label="Location" value={client.location || 'Not added'} />
         </div>
-        {client.linkedInUrl && <a href={client.linkedInUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#2563EB] hover:text-blue-700">Open LinkedIn profile <ExternalLink className="size-4" /></a>}
+        {client.linkedInUrl && <a href={client.linkedInUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#2563EB] hover:text-blue-700">Open LinkedIn {client.clientType === 'Company' ? 'company page' : 'profile'} <ExternalLink className="size-4" /></a>}
       </section>
       <section className="surface-card p-6">
         <div className="flex items-center justify-between gap-4">

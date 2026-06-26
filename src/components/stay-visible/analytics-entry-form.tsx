@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Client, Post } from '@/lib/stay-visible/types';
+import { clientDisplayName } from '@/lib/stay-visible/client-display';
 import { Field, inputClass, primaryButtonClass, textareaClass } from './ui';
 
 export function AnalyticsEntryForm({ clients, posts }: { clients: Client[]; posts: Post[] }) {
@@ -44,7 +45,7 @@ export function AnalyticsEntryForm({ clients, posts }: { clients: Client[]; post
     </div>
 
     <div className="mt-6 grid gap-4 @lg/page:grid-cols-2">
-      <Field label="Client"><select required name="clientId" value={clientId} onChange={(event) => setClientId(event.target.value)} className={inputClass}>{clients.map((client) => <option key={client.id} value={client.id}>{client.firstName} {client.lastName}</option>)}</select></Field>
+      <Field label="Client"><select required name="clientId" value={clientId} onChange={(event) => setClientId(event.target.value)} className={inputClass}>{clients.map((client) => <option key={client.id} value={client.id}>{clientDisplayName(client)}</option>)}</select></Field>
       <Field label="Post"><select name="postId" className={inputClass}><option value="">No specific post</option>{clientPosts.map((post) => <option key={post.id} value={post.id}>{post.topic}</option>)}</select></Field>
       <Field label="Captured date"><input required type="date" name="capturedAt" defaultValue={new Date().toISOString().slice(0, 10)} className={inputClass} /></Field>
       <Field label="Posting hour"><input type="number" min="0" max="23" name="postingHour" placeholder="9" className={inputClass} /></Field>

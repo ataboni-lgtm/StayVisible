@@ -11,6 +11,7 @@ export type PostStatus =
 
 export interface Client {
   id: string;
+  clientType: 'Individual' | 'Company';
   firstName: string;
   lastName: string;
   email: string;

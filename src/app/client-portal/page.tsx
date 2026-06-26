@@ -6,6 +6,7 @@ import { ClientPortalEventForm } from '@/components/stay-visible/client-portal-e
 import { ClientPortalPhotoUpload } from '@/components/stay-visible/client-portal-photo-upload';
 import { EmptyState, StatusBadge } from '@/components/stay-visible/ui';
 import { readStore } from '@/lib/stay-visible/local-store';
+import { clientDisplayName, clientRoleLine } from '@/lib/stay-visible/client-display';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,8 @@ export default async function ClientPortalPage() {
   if (!client) redirect('/client-login');
 
   const opportunities = data.postOpportunities.filter((item) => item.clientId === client.id);
+  const displayName = clientDisplayName(client);
+  const roleLine = clientRoleLine(client);
 
   return <main className="min-h-screen bg-[#F8FAFC]">
     <header className="border-b border-slate-200 bg-white">
@@ -27,7 +30,7 @@ export default async function ClientPortalPage() {
           <span className="grid size-9 place-items-center rounded-xl bg-[#2563EB] text-white shadow-sm"><Sparkles className="size-4.5" /></span>
           <span className="text-lg font-semibold tracking-tight text-[#0B1F3A]">StayVisible</span>
         </Link>
-        <span className="rounded-full bg-[#F4D7A1] px-3 py-1 text-xs font-semibold text-[#0B1F3A]">{client.firstName} {client.lastName}</span>
+        <span className="rounded-full bg-[#F4D7A1] px-3 py-1 text-xs font-semibold text-[#0B1F3A]">{displayName}</span>
       </div>
     </header>
     <div className="@container/page mx-auto max-w-6xl px-4 py-8">
@@ -39,11 +42,11 @@ export default async function ClientPortalPage() {
       <section className="mb-7 grid gap-4 @3xl/page:grid-cols-3">
         <div className="surface-card p-5 @3xl/page:col-span-2">
           <p className="eyebrow">Your profile</p>
-          <h2 className="mt-2 text-xl font-semibold text-[#0B1F3A]">{client.firstName} {client.lastName}</h2>
+          <h2 className="mt-2 text-xl font-semibold text-[#0B1F3A]">{displayName}</h2>
           <div className="mt-4 grid gap-4 text-sm @lg/page:grid-cols-2">
-            <div><p className="font-semibold text-[#0B1F3A]">Role</p><p className="mt-1 text-slate-500">{client.jobTitle || 'Not added yet'}{client.company ? ` at ${client.company}` : ''}</p></div>
+            <div><p className="font-semibold text-[#0B1F3A]">{client.clientType === 'Company' ? 'Positioning' : 'Role'}</p><p className="mt-1 text-slate-500">{roleLine || 'Not added yet'}</p></div>
             <div><p className="font-semibold text-[#0B1F3A]">Location</p><p className="mt-1 text-slate-500">{client.location || 'Not added yet'}</p></div>
-            <div><p className="font-semibold text-[#0B1F3A]">Email</p><p className="mt-1 text-slate-500">{client.email}</p></div>
+            <div><p className="font-semibold text-[#0B1F3A]">{client.clientType === 'Company' ? 'Primary contact' : 'Email'}</p><p className="mt-1 text-slate-500">{client.clientType === 'Company' ? `${client.firstName} ${client.lastName} · ${client.email}` : client.email}</p></div>
             <div><p className="font-semibold text-[#0B1F3A]">LinkedIn</p><p className="mt-1 truncate text-slate-500">{client.linkedInUrl || 'Not added yet'}</p></div>
           </div>
         </div>

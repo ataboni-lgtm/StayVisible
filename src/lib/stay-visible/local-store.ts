@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import type { Approval, Client, ContentRecommendation, Post, PostAnalytics, PostOpportunity, StoredData, VoiceProfile, WeeklyIdea } from './types';
 import { emptyVoiceProfile } from './demo-data';
+import { clientDisplayName, clientInitials } from './client-display';
 
 const dataDir = path.join(process.cwd(), 'data');
 const dataFile = path.join(dataDir, 'stay-visible.json');
@@ -26,6 +27,7 @@ export async function readStore(): Promise<StoredData> {
     return {
       clients: (parsed.clients ?? []).map((client) => ({
         ...client,
+        clientType: client.clientType ?? 'Individual',
         portalAccessEnabled: client.portalAccessEnabled ?? false,
         portalPasswordSet: client.portalPasswordSet ?? Boolean((client as Client & { portalPasswordHash?: string }).portalPasswordHash),
       })),
@@ -55,7 +57,7 @@ export async function upsertClient(input: Omit<Client, 'id' | 'initials' | 'port
   const client: Client = {
     ...input,
     id: input.id ?? randomUUID(),
-    initials: `${input.firstName[0] ?? ''}${input.lastName[0] ?? ''}`.toUpperCase(),
+    initials: clientInitials(input),
     portalAccessEnabled: input.portalAccessEnabled,
     portalPasswordSet: Boolean(input.portalPassword || (existingClient as Client & { portalPasswordHash?: string } | undefined)?.portalPasswordHash),
   };
@@ -108,7 +110,7 @@ export async function saveGeneratedPosts(input: Omit<PostOpportunity, 'id' | 'st
   const posts: Post[] = options.map((option) => ({
     id: randomUUID(),
     clientId: input.clientId,
-    clientName: client ? `${client.firstName} ${client.lastName}` : 'Client',
+    clientName: client ? clientDisplayName(client) : 'Client',
     topic: input.topic,
     type: input.postType,
     caption: option.content,
@@ -138,7 +140,7 @@ export async function savePostIdea(input: Omit<PostOpportunity, 'id' | 'status' 
     id: randomUUID(),
     clientId: input.clientId,
     postOpportunityId: opportunity.id,
-    clientName: client ? `${client.firstName} ${client.lastName}` : 'Client',
+    clientName: client ? clientDisplayName(client) : 'Client',
     topic: input.topic,
     type: input.postType,
     caption: input.mainTakeaway || input.notes || '',
@@ -219,7 +221,7 @@ export async function saveWeeklyIdeas(clientId: string, ideas: Array<Omit<Weekly
     ...idea,
     id: randomUUID(),
     clientId,
-    clientName: `${client.firstName} ${client.lastName}`,
+    clientName: clientDisplayName(client),
     status: idea.status ?? 'Idea' as const,
   }));
   data.weeklyIdeas.unshift(...saved);
@@ -299,9 +301,19 @@ async function readDatabaseStore(): Promise<StoredData> {
     db.select().from(schema.postAnalytics),
     db.select().from(schema.contentRecommendations),
   ]);
+  const clientNameById = new Map(clientRows.map((client) => [
+    client.id,
+    clientDisplayName({
+      clientType: client.clientType as Client['clientType'],
+      company: client.company ?? '',
+      firstName: client.firstName,
+      lastName: client.lastName,
+    }),
+  ]));
   return {
     clients: clientRows.map((client) => ({
       id: client.id,
+      clientType: client.clientType as Client['clientType'],
       firstName: client.firstName,
       lastName: client.lastName,
       email: client.email,
@@ -316,7 +328,7 @@ async function readDatabaseStore(): Promise<StoredData> {
       topicsToAvoid: client.topicsToAvoid,
       notificationMethod: client.preferredNotificationMethod,
       status: client.status,
-      initials: `${client.firstName[0] ?? ''}${client.lastName[0] ?? ''}`.toUpperCase(),
+      initials: clientInitials({ clientType: client.clientType as Client['clientType'], company: client.company ?? '', firstName: client.firstName, lastName: client.lastName }),
       portalAccessEnabled: client.portalAccessEnabled,
       portalPasswordSet: Boolean(client.portalPasswordHash),
     })),
@@ -324,7 +336,7 @@ async function readDatabaseStore(): Promise<StoredData> {
       id: post.id,
       clientId: post.clientId,
       postOpportunityId: post.postOpportunityId ?? undefined,
-      clientName: clientRows.find((client) => client.id === post.clientId) ? `${clientRows.find((client) => client.id === post.clientId)!.firstName} ${clientRows.find((client) => client.id === post.clientId)!.lastName}` : 'Client',
+      clientName: clientNameById.get(post.clientId) ?? 'Client',
       topic: opportunityRows.find((item) => item.id === post.postOpportunityId)?.topicName ?? 'LinkedIn post',
       type: opportunityRows.find((item) => item.id === post.postOpportunityId)?.postType ?? post.variantLabel ?? 'General Update',
       caption: post.caption,
@@ -337,7 +349,7 @@ async function readDatabaseStore(): Promise<StoredData> {
     weeklyIdeas: ideaRows.map((idea) => ({
       id: idea.id,
       clientId: idea.clientId,
-      clientName: clientRows.find((client) => client.id === idea.clientId) ? `${clientRows.find((client) => client.id === idea.clientId)!.firstName} ${clientRows.find((client) => client.id === idea.clientId)!.lastName}` : 'Client',
+      clientName: clientNameById.get(idea.clientId) ?? 'Client',
       topic: idea.suggestedTopic,
       reason: idea.whyItWorks ?? '',
       angle: idea.suggestedAngle ?? '',
@@ -426,6 +438,7 @@ async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials' | 'por
   const values = {
     id: clientId,
     adminId: await ensureLocalAdmin(),
+    clientType: input.clientType,
     firstName: input.firstName,
     lastName: input.lastName,
     email: input.email,
@@ -446,6 +459,7 @@ async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials' | 'por
   const [row] = await db.insert(schema.clients).values(values).onConflictDoUpdate({ target: schema.clients.id, set: values }).returning();
   return {
     id: row.id,
+    clientType: row.clientType as Client['clientType'],
     firstName: row.firstName,
     lastName: row.lastName,
     email: row.email,
@@ -460,7 +474,7 @@ async function upsertDatabaseClient(input: Omit<Client, 'id' | 'initials' | 'por
     topicsToAvoid: row.topicsToAvoid,
     notificationMethod: row.preferredNotificationMethod,
     status: row.status,
-    initials: `${row.firstName[0] ?? ''}${row.lastName[0] ?? ''}`.toUpperCase(),
+    initials: clientInitials({ clientType: row.clientType as Client['clientType'], company: row.company ?? '', firstName: row.firstName, lastName: row.lastName }),
     portalAccessEnabled: row.portalAccessEnabled,
     portalPasswordSet: Boolean(row.portalPasswordHash),
   };
@@ -474,6 +488,7 @@ async function authenticateDatabaseClientPortal(email: string, password: string)
   if (!verifyPortalPassword(password, row.portalPasswordHash)) return null;
   return {
     id: row.id,
+    clientType: row.clientType as Client['clientType'],
     firstName: row.firstName,
     lastName: row.lastName,
     email: row.email,
@@ -488,7 +503,7 @@ async function authenticateDatabaseClientPortal(email: string, password: string)
     topicsToAvoid: row.topicsToAvoid,
     notificationMethod: row.preferredNotificationMethod,
     status: row.status,
-    initials: `${row.firstName[0] ?? ''}${row.lastName[0] ?? ''}`.toUpperCase(),
+    initials: clientInitials({ clientType: row.clientType as Client['clientType'], company: row.company ?? '', firstName: row.firstName, lastName: row.lastName }),
     portalAccessEnabled: row.portalAccessEnabled,
     portalPasswordSet: true,
   };

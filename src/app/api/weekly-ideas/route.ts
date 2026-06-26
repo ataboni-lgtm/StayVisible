@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { routeHandler } from '@/lib/route-handler/route-handler';
 import { ZodValidationError } from '@/lib/route-handler/next-errors';
+import { clientDisplayName } from '@/lib/stay-visible/client-display';
 import { readStore, saveWeeklyIdeas } from '@/lib/stay-visible/local-store';
 
 const zWeeklyIdeasInput = z.object({
@@ -44,14 +45,15 @@ export const POST = routeHandler(async (request: NextRequest) => {
   return NextResponse.json({ ideas: saved });
 });
 
-function fallbackIdeas(client: { firstName: string; jobTitle: string; industry: string; targetAudience: string; topics: string[] }, notes: string) {
+function fallbackIdeas(client: { clientType: 'Individual' | 'Company'; firstName: string; lastName: string; company: string; jobTitle: string; industry: string; targetAudience: string; topics: string[] }, notes: string) {
   const role = client.jobTitle || 'your role';
   const audience = client.targetAudience || 'your LinkedIn audience';
   const topic = client.topics[0] || client.industry || 'the work you are doing this week';
+  const displayName = clientDisplayName(client);
   return [
     {
       topic: `A practical lesson from ${role}`,
-      reason: `It gives ${client.firstName} a simple way to share expertise without sounding promotional.`,
+      reason: `It gives ${displayName} a simple way to share expertise without sounding promotional.`,
       angle: notes || `Share one recent moment that changed how you think about ${topic}.`,
     },
     {
