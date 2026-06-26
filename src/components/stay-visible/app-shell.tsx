@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button onClick={() => setOpen(true)} className="rounded-lg p-2 hover:bg-slate-100 lg:hidden"><Menu className="size-5" /></button>
           <div className="ml-auto flex items-center gap-3">
             <Link href="/posts/new" className="hidden items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:flex"><Plus className="size-4" />New post</Link>
-            <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 pr-2.5 text-sm text-slate-700"><span className="grid size-7 place-items-center rounded-lg bg-[#F4D7A1] text-xs font-bold text-[#0B1F3A]">AT</span><span className="hidden sm:inline">Andrea</span><ChevronDown className="size-3.5 text-slate-400" /></button>
+            <Link href="/settings" className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 pr-2.5 text-sm text-slate-700 transition hover:bg-slate-50"><span className="grid size-7 place-items-center rounded-lg bg-[#F4D7A1] text-xs font-bold text-[#0B1F3A]">AT</span><span className="hidden sm:inline">Andrea</span><ChevronDown className="size-3.5 text-slate-400" /></Link>
           </div>
         </header>
         <main className="@container/page mx-auto max-w-[1440px] p-4 @md/page:p-8">{children}</main>
