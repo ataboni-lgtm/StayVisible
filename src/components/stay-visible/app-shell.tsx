@@ -12,6 +12,7 @@ const navigation = [
   { href: '/clients', label: 'Clients', icon: Users },
   { href: '/event-sheet', label: 'Event Sheet', icon: CalendarDays },
   { href: '/content-calendar', label: 'Content Calendar', icon: CalendarDays },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/posts/new', label: 'Posts', icon: FilePenLine },
   { href: '/weekly-ideas', label: 'Weekly Ideas', icon: Lightbulb },
   { href: '/settings', label: 'Settings', icon: Settings },

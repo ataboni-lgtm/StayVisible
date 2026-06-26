@@ -285,3 +285,54 @@ export const weeklyIdeas = pgTable(
     statusIdx: index('weekly_ideas_status_idx').on(table.status),
   }),
 );
+
+export const postAnalytics = pgTable(
+  'post_analytics',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    postId: uuid('post_id').references(() => posts.id, { onDelete: 'set null' }),
+    capturedAt: date('captured_at').notNull(),
+    postedAt: timestamp('posted_at', { withTimezone: true }),
+    postingHour: integer('posting_hour'),
+    impressions: integer('impressions').notNull().default(0),
+    reactions: integer('reactions').notNull().default(0),
+    comments: integer('comments').notNull().default(0),
+    reposts: integer('reposts').notNull().default(0),
+    profileViews: integer('profile_views').notNull().default(0),
+    linkClicks: integer('link_clicks').notNull().default(0),
+    engagementRateBps: integer('engagement_rate_bps').notNull().default(0),
+    source: text('source').notNull().default('manual'),
+    notes: text('notes'),
+    ...timestamps,
+  },
+  (table) => ({
+    clientIdx: index('post_analytics_client_id_idx').on(table.clientId),
+    postIdx: index('post_analytics_post_id_idx').on(table.postId),
+    capturedAtIdx: index('post_analytics_captured_at_idx').on(table.capturedAt),
+  }),
+);
+
+export const contentRecommendations = pgTable(
+  'content_recommendations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    recommendationType: text('recommendation_type').notNull(),
+    title: text('title').notNull(),
+    rationale: text('rationale').notNull(),
+    suggestedAction: text('suggested_action').notNull(),
+    confidenceScore: integer('confidence_score').notNull().default(50),
+    sourceMetrics: jsonb('source_metrics').$type<Record<string, unknown>>().notNull().default({}),
+    status: text('status').notNull().default('active'),
+    ...timestamps,
+  },
+  (table) => ({
+    clientIdx: index('content_recommendations_client_id_idx').on(table.clientId),
+    statusIdx: index('content_recommendations_status_idx').on(table.status),
+  }),
+);

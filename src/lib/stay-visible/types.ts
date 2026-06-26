@@ -102,6 +102,36 @@ export interface VoiceProfile {
   learningNotes: string[];
 }
 
+export interface PostAnalytics {
+  id: string;
+  clientId: string;
+  postId?: string;
+  postTopic?: string;
+  capturedAt: string;
+  postedAt?: string;
+  postingHour?: number;
+  impressions: number;
+  reactions: number;
+  comments: number;
+  reposts: number;
+  profileViews: number;
+  linkClicks: number;
+  engagementRate: number;
+  notes?: string;
+}
+
+export interface ContentRecommendation {
+  id: string;
+  clientId: string;
+  title: string;
+  rationale: string;
+  suggestedAction: string;
+  recommendationType: string;
+  confidenceScore: number;
+  status: string;
+  createdAt: string;
+}
+
 export interface StoredData {
   clients: Client[];
   posts: Post[];
@@ -109,4 +139,6 @@ export interface StoredData {
   postOpportunities: PostOpportunity[];
   approvals: Approval[];
   voiceProfiles: Record<string, VoiceProfile>;
+  postAnalytics: PostAnalytics[];
+  contentRecommendations: ContentRecommendation[];
 }

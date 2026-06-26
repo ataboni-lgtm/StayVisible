@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import type { Approval, Client, Post, PostOpportunity, StoredData, VoiceProfile, WeeklyIdea } from './types';
+import type { Approval, Client, ContentRecommendation, Post, PostAnalytics, PostOpportunity, StoredData, VoiceProfile, WeeklyIdea } from './types';
 import { emptyVoiceProfile } from './demo-data';
 
 const dataDir = path.join(process.cwd(), 'data');
@@ -14,6 +14,8 @@ const initialData: StoredData = {
   postOpportunities: [],
   approvals: [],
   voiceProfiles: {},
+  postAnalytics: [],
+  contentRecommendations: [],
 };
 
 export async function readStore(): Promise<StoredData> {
@@ -32,6 +34,8 @@ export async function readStore(): Promise<StoredData> {
       postOpportunities: parsed.postOpportunities ?? [],
       approvals: parsed.approvals ?? [],
       voiceProfiles: parsed.voiceProfiles ?? {},
+      postAnalytics: parsed.postAnalytics ?? [],
+      contentRecommendations: parsed.contentRecommendations ?? [],
     };
   } catch {
     await writeStore(initialData);
@@ -223,6 +227,31 @@ export async function saveWeeklyIdeas(clientId: string, ideas: Array<Omit<Weekly
   return saved;
 }
 
+export async function savePostAnalytics(input: Omit<PostAnalytics, 'id' | 'postTopic' | 'engagementRate'>) {
+  if (hasDatabase()) return saveDatabasePostAnalytics(input);
+  const data = await readStore();
+  const post = data.posts.find((item) => item.id === input.postId);
+  const analytics: PostAnalytics = {
+    ...input,
+    id: randomUUID(),
+    postTopic: post?.topic,
+    engagementRate: calculateEngagementRate(input),
+  };
+  data.postAnalytics.unshift(analytics);
+  data.contentRecommendations = refreshRecommendations(data.contentRecommendations, buildRecommendations(input.clientId, [analytics], data.posts));
+  await writeStore(data);
+  return analytics;
+}
+
+export async function refreshAnalyticsRecommendations(clientId: string) {
+  if (hasDatabase()) return refreshDatabaseAnalyticsRecommendations(clientId);
+  const data = await readStore();
+  const recommendations = buildRecommendations(clientId, data.postAnalytics.filter((item) => item.clientId === clientId), data.posts);
+  data.contentRecommendations = refreshRecommendations(data.contentRecommendations, recommendations);
+  await writeStore(data);
+  return recommendations;
+}
+
 function extractHashtags(content: string) {
   return Array.from(content.matchAll(/#([\w-]+)/g)).map((match) => match[1]);
 }
@@ -260,13 +289,15 @@ async function getDbContext() {
 
 async function readDatabaseStore(): Promise<StoredData> {
   const { db, schema } = await getDbContext();
-  const [clientRows, postRows, ideaRows, opportunityRows, approvalRows, profileRows] = await Promise.all([
+  const [clientRows, postRows, ideaRows, opportunityRows, approvalRows, profileRows, analyticsRows, recommendationRows] = await Promise.all([
     db.select().from(schema.clients),
     db.select().from(schema.posts),
     db.select().from(schema.weeklyIdeas),
     db.select().from(schema.postOpportunities),
     db.select().from(schema.approvals),
     db.select().from(schema.voiceProfiles),
+    db.select().from(schema.postAnalytics),
+    db.select().from(schema.contentRecommendations),
   ]);
   return {
     clients: clientRows.map((client) => ({
@@ -355,6 +386,36 @@ async function readDatabaseStore(): Promise<StoredData> {
       donts: profile.donts,
       learningNotes: profile.learningNotes,
     }])),
+    postAnalytics: analyticsRows.map((analytics) => ({
+      id: analytics.id,
+      clientId: analytics.clientId,
+      postId: analytics.postId ?? undefined,
+      postTopic: postRows.find((post) => post.id === analytics.postId)?.postOpportunityId
+        ? opportunityRows.find((opportunity) => opportunity.id === postRows.find((post) => post.id === analytics.postId)?.postOpportunityId)?.topicName
+        : undefined,
+      capturedAt: analytics.capturedAt,
+      postedAt: analytics.postedAt?.toISOString(),
+      postingHour: analytics.postingHour ?? undefined,
+      impressions: analytics.impressions,
+      reactions: analytics.reactions,
+      comments: analytics.comments,
+      reposts: analytics.reposts,
+      profileViews: analytics.profileViews,
+      linkClicks: analytics.linkClicks,
+      engagementRate: analytics.engagementRateBps / 100,
+      notes: analytics.notes ?? undefined,
+    })),
+    contentRecommendations: recommendationRows.map((recommendation) => ({
+      id: recommendation.id,
+      clientId: recommendation.clientId,
+      title: recommendation.title,
+      rationale: recommendation.rationale,
+      suggestedAction: recommendation.suggestedAction,
+      recommendationType: recommendation.recommendationType,
+      confidenceScore: recommendation.confidenceScore,
+      status: recommendation.status,
+      createdAt: recommendation.createdAt.toISOString(),
+    })),
   };
 }
 
@@ -625,6 +686,123 @@ async function saveDatabaseWeeklyIdeas(clientId: string, ideas: Array<Omit<Weekl
   }))).returning();
   const store = await readDatabaseStore();
   return rows.map((row) => store.weeklyIdeas.find((idea) => idea.id === row.id)!).filter(Boolean);
+}
+
+async function saveDatabasePostAnalytics(input: Omit<PostAnalytics, 'id' | 'postTopic' | 'engagementRate'>) {
+  const { db, schema } = await getDbContext();
+  const [row] = await db.insert(schema.postAnalytics).values({
+    clientId: input.clientId,
+    postId: input.postId || null,
+    capturedAt: input.capturedAt,
+    postedAt: input.postedAt ? new Date(input.postedAt) : null,
+    postingHour: input.postingHour,
+    impressions: input.impressions,
+    reactions: input.reactions,
+    comments: input.comments,
+    reposts: input.reposts,
+    profileViews: input.profileViews,
+    linkClicks: input.linkClicks,
+    engagementRateBps: Math.round(calculateEngagementRate(input) * 100),
+    notes: input.notes,
+  }).returning();
+  await refreshDatabaseAnalyticsRecommendations(input.clientId);
+  const store = await readDatabaseStore();
+  return store.postAnalytics.find((analytics) => analytics.id === row.id)!;
+}
+
+async function refreshDatabaseAnalyticsRecommendations(clientId: string) {
+  const { db, schema, eq } = await getDbContext();
+  const store = await readDatabaseStore();
+  const recommendations = buildRecommendations(clientId, store.postAnalytics.filter((item) => item.clientId === clientId), store.posts);
+  await db.update(schema.contentRecommendations).set({ status: 'replaced' }).where(eq(schema.contentRecommendations.clientId, clientId));
+  if (!recommendations.length) return [];
+  const rows = await db.insert(schema.contentRecommendations).values(recommendations.map((recommendation) => ({
+    clientId: recommendation.clientId,
+    recommendationType: recommendation.recommendationType,
+    title: recommendation.title,
+    rationale: recommendation.rationale,
+    suggestedAction: recommendation.suggestedAction,
+    confidenceScore: recommendation.confidenceScore,
+    sourceMetrics: { generatedAt: new Date().toISOString() },
+  }))).returning();
+  return rows.map((row) => ({
+    id: row.id,
+    clientId: row.clientId,
+    title: row.title,
+    rationale: row.rationale,
+    suggestedAction: row.suggestedAction,
+    recommendationType: row.recommendationType,
+    confidenceScore: row.confidenceScore,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
+
+function calculateEngagementRate(input: Pick<PostAnalytics, 'impressions' | 'reactions' | 'comments' | 'reposts' | 'linkClicks'>) {
+  if (!input.impressions) return 0;
+  return Number((((input.reactions + input.comments + input.reposts + input.linkClicks) / input.impressions) * 100).toFixed(2));
+}
+
+function buildRecommendations(clientId: string, analytics: PostAnalytics[], posts: Post[]): ContentRecommendation[] {
+  if (!analytics.length) return [];
+  const now = new Date().toISOString();
+  const best = [...analytics].sort((a, b) => b.engagementRate - a.engagementRate)[0];
+  const average = analytics.reduce((sum, item) => sum + item.engagementRate, 0) / analytics.length;
+  const bestHour = best.postingHour;
+  const relatedPost = posts.find((post) => post.id === best.postId);
+  const recommendations: ContentRecommendation[] = [];
+
+  if (bestHour !== undefined) {
+    recommendations.push({
+      id: randomUUID(),
+      clientId,
+      recommendationType: 'posting_time',
+      title: `Test posting around ${formatHour(bestHour)}`,
+      rationale: `The strongest tracked post performed at ${best.engagementRate.toFixed(2)}% engagement${relatedPost ? ` on “${relatedPost.topic}”` : ''}.`,
+      suggestedAction: `Schedule the next two comparable posts near ${formatHour(bestHour)}, then compare engagement before changing the default posting window.`,
+      confidenceScore: Math.min(90, 45 + analytics.length * 10),
+      status: 'active',
+      createdAt: now,
+    });
+  }
+
+  if (average < 2) {
+    recommendations.push({
+      id: randomUUID(),
+      clientId,
+      recommendationType: 'engagement_quality',
+      title: 'Make the opening more specific',
+      rationale: `Average engagement is ${average.toFixed(2)}%, so the first line may need a clearer reason to keep reading.`,
+      suggestedAction: 'Use a direct opener tied to a real meeting, client question, event takeaway, or market observation.',
+      confidenceScore: Math.min(85, 50 + analytics.length * 8),
+      status: 'active',
+      createdAt: now,
+    });
+  } else {
+    recommendations.push({
+      id: randomUUID(),
+      clientId,
+      recommendationType: 'content_pattern',
+      title: 'Repeat the strongest content pattern',
+      rationale: `Tracked posts are averaging ${average.toFixed(2)}% engagement, with the best post at ${best.engagementRate.toFixed(2)}%.`,
+      suggestedAction: 'Draft the next post using the same structure as the best performer: specific moment, practical takeaway, short closing thought.',
+      confidenceScore: Math.min(88, 52 + analytics.length * 8),
+      status: 'active',
+      createdAt: now,
+    });
+  }
+
+  return recommendations;
+}
+
+function refreshRecommendations(existing: ContentRecommendation[], incoming: ContentRecommendation[]) {
+  const clients = new Set(incoming.map((item) => item.clientId));
+  return [...incoming, ...existing.filter((item) => !clients.has(item.clientId))];
+}
+
+function formatHour(hour: number) {
+  const date = new Date(2026, 0, 1, hour);
+  return new Intl.DateTimeFormat('en-US', { hour: 'numeric' }).format(date);
 }
 
 function startOfWeekIso(date = new Date()) {

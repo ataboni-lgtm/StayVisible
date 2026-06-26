@@ -98,6 +98,17 @@ Scheduled Event Sheet items can trigger two reminder jobs:
 
 Both default to today’s events. You can pass `date` as `YYYY-MM-DD` for testing. The first reminder emails the client to take photos at the event. The second follows the client’s preferred notification method and links them to the client portal to upload photos or notes. Reminder sends are logged per event/type/channel so repeated job runs do not duplicate messages.
 
+## Analytics backend
+
+StayVisible includes a $0 analytics backend for manual tracking now and official LinkedIn analytics import later.
+
+- `POST /api/analytics` saves post-level metrics such as impressions, reactions, comments, reposts, clicks, profile views, posting hour, and notes.
+- `GET /api/analytics` returns saved analytics, engagement summaries, and active recommendations.
+- `GET /api/analytics?clientId=...` scopes analytics and suggestions to one client.
+- `/analytics` provides a manual entry and review page.
+
+Suggestions are rule-based and free: the app looks for the best-performing posting hour, average engagement, and content patterns to recommend what to test next.
+
 ## Environment variables
 
 All supported variables are documented in [`.env.example`](./.env.example). `NEXT_PUBLIC_*` values may reach the browser. Every other credential must remain server-only.
@@ -126,5 +137,6 @@ With Supabase configured, use a new 32-byte random token created by the database
 - `/client-login`, `/client-portal`
 - `/event-sheet`
 - `/content-calendar`
+- `/analytics`
 - `/weekly-ideas`
 - `/settings`
